@@ -1,22 +1,24 @@
-"use client"
+"use client";
 
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { z } from "zod";
+import Link from "next/link";
+import Image from "next/image";
+import { toast } from "sonner";
+import { auth } from "@/firebase/client";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
 
-import { Button } from "@/components/ui/button"
-import { Form } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-
-
-import React from 'react';
-import FormField from "./FormField"
-import Image from 'next/image';
-import Link from "next/link"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
+import { signIn, signUp } from "@/lib/actions/auth.action";
+import FormField from "./FormField";
 
 type FormType = 'sign-in' | 'sign-up';
 
@@ -42,16 +44,47 @@ const AuthForm = ({ type } : { type : FormType }) => {
   })
  
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       if(type === 'sign-up') {
-          toast.success("Your Account has been created. Please go to Sign in")
-          router.push('/sign-in');
-          console.log('SIGN UP', values);
-      } else {
-          toast.success("Sign in Successfully")
-          router.push('/');
-          console.log('SIGN IN', values);
+        const{ name, email, password } = values;
+
+        const userCredentials = await createUserWithEmailAndPassword(auth, email, password);
+        const result = await signUp({
+          uid : userCredentials.user.uid,
+          name :  name!,
+          email,
+          password,
+        })
+
+        if(!result.success) {
+          toast.error(result.message);
+          return;
+        }
+
+        toast.success("Your Account has been created. Please go to Sign in")
+        router.push('/sign-in');
+        console.log('SIGN UP', values);
+      } 
+      else {
+
+        const {email, password} = values;
+
+        const userCredentials = await signInWithEmailAndPassword(auth, email, password);
+
+        const idToken = await userCredentials.user.getIdToken();
+
+        if(!idToken){
+            toast.error("Sign in Failed ")
+            return;
+        }
+
+        await signIn({
+          email, idToken
+        })
+        toast.success("Sign in Successfully")
+        router.push('/');
+        console.log('SIGN IN', values);
       }
     } catch (error) {
       console.log(error)
@@ -126,3 +159,4 @@ const AuthForm = ({ type } : { type : FormType }) => {
 };
 
 export default AuthForm;
+

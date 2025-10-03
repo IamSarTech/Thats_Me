@@ -51,7 +51,7 @@ const Agent = ({userName} : AgentProps) => {
     <div className='w-full flex justify-center'>
         {callStatus !== 'ACTIVE' ? (
             <button className = "realtive btn-call">
-                <span className = {cn('absolute animate-ping rounded-full opacity-75 ', callStatus !== 'CONNECTING' & 'hiden')}>
+                <span className = {cn('absolute animate-ping rounded-full opacity-75 ', callStatus !== 'CONNECTING' & 'hidden')}>
                     
                 </span>
                 <span>
